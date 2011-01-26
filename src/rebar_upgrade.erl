@@ -71,25 +71,25 @@
 %% internal api
 
 run_checks(OldVerPath, ReltoolFile) ->
-    true = prop_check(true, filelib:is_dir(OldVerPath),
+    true = prop_check(filelib:is_dir(OldVerPath),
                       "Release directory doesn't exist (~p)~n", [OldVerPath]),
 
     {Name, Ver} = get_release_name(ReltoolFile),
 
     NamePath = filename:join([".", Name]),
-    true = prop_check(true, filelib:is_dir(NamePath),
+    true = prop_check(filelib:is_dir(NamePath),
                       "Release directory doesn't exist (~p)~n", [NamePath]),
 
     {NewName, NewVer} = get_release_version(Name, NamePath),
     {OldName, OldVer} = get_release_version(Name, OldVerPath),
 
-    true = prop_check(true, NewName == OldName, 
+    true = prop_check(NewName == OldName, 
                       "New and old .rel release names do not match~n", []),
-    true = prop_check(true, Name == NewName, 
+    true = prop_check(Name == NewName, 
                       "Reltool and .rel release names do not match~n", []),
-    true = prop_check(false, NewVer == OldVer, 
+    true = prop_check(NewVer =/= OldVer, 
                       "New and old .rel contain the same version~n", []),
-    true = prop_check(true, Ver == NewVer, 
+    true = prop_check(Ver == NewVer, 
                       "Reltool and .rel versions do not match~n", []),
 
     {NewName, NewVer}.
@@ -114,8 +114,8 @@ get_release_version(Name, Path) ->
                                     Name ++ ".rel"])),
     {Name1, Ver}.
 
-prop_check(Expect, Result, _, _) when Expect == Result -> true;
-prop_check(_, _, Msg, Args) -> ?ABORT(Msg, Args).
+prop_check(true, _, _) -> true;
+prop_check(false, Msg, Args) -> ?ABORT(Msg, Args).
 
 setup(OldVerPath, NewName, NewVer, NameVer) ->
     NewRelPath = filename:join([".", NewName]),
