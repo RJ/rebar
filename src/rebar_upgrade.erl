@@ -124,13 +124,15 @@ setup(OldVerPath, NewName, NewVer, NameVer) ->
     Dst = filename:join([".", NameVer ++ ".rel"]),
     {ok, _} = file:copy(Src, Dst),
     ok = code:add_pathsa(
-           filelib:wildcard(filename:join([NewRelPath, "*"]))),
-    ok = code:add_pathsa(
-           filelib:wildcard(filename:join([NewRelPath, "lib", "*", "ebin"]))),
-    ok = code:add_pathsa(
-           filelib:wildcard(filename:join([OldVerPath, "lib", "*", "ebin"]))),
-    ok = code:add_pathsa(
-           filelib:wildcard(filename:join([OldVerPath, "releases", "*"]))).
+           lists:append([
+                         filelib:wildcard(filename:join([OldVerPath, 
+                                                         "releases", "*"])),
+                         filelib:wildcard(filename:join([OldVerPath, 
+                                                         "lib", "*", "ebin"])),
+                         filelib:wildcard(filename:join([NewRelPath,
+                                                         "lib", "*", "ebin"])),
+                         filelib:wildcard(filename:join([NewRelPath, "*"]))
+                        ])).
 
 run_systools(NewVer, Name) ->
     Opts = [silent],
@@ -157,8 +159,10 @@ run_systools(NewVer, Name) ->
 boot_files(Ver, Name) ->
     ok = file:make_dir(filename:join([".", "releases"])),
     ok = file:make_dir(filename:join([".", "releases", Ver])),
-    ok = file:make_symlink(filename:join(["start.boot"]), filename:join([".", "releases", Ver, Name ++ ".boot"])),
-    {ok, _} = file:copy(filename:join([".", Name, "releases", Ver, "start_clean.boot"]), filename:join([".", "releases", Ver, "start_clean.boot"])).
+    ok = file:make_symlink(filename:join(["start.boot"]), 
+                           filename:join([".", "releases", Ver, Name ++ ".boot"])),
+    {ok, _} = file:copy(filename:join([".", Name, "releases", Ver, "start_clean.boot"]), 
+                        filename:join([".", "releases", Ver, "start_clean.boot"])).
 
 make_tar(NameVer) ->
     Filename = NameVer ++ ".tar.gz",
