@@ -28,6 +28,7 @@
 -module(rebar_upgrade).
 
 -include("rebar.hrl").
+-include_lib("kernel/include/file.hrl").
 
 -export(['generate-upgrade'/2]).
 
@@ -52,8 +53,14 @@
             %% Build the package
             run_systools(NameVer, NewName),
 
+            %% Boot file changes
+            boot_files(NewVer, NewName), 
+
+            %% Extract upgrade and tar it back up with changes
+            make_tar(NameVer),
+
             %% Clean up files that systools created
-            ok = cleanup(NameVer),
+            ok = cleanup(NameVer, NewName, NewVer),
 
             %% Restore original path
             true = code:set_path(OrigPath),
@@ -173,14 +180,50 @@ run_systools(NewVer, Name) ->
                         {error, _, _Message2} ->
                             ?ABORT("Systools aborted with: ~p~n", [_Message2]);
                         _ ->
-                            ?CONSOLE("~p upgrade package created~n", NameList)
+                            ok
                     end
             end
     end.
 
-cleanup(NameVer) ->
+boot_files(Ver, Name) ->
+    ok = file:make_dir(filename:join([".", "releases"])),
+    ok = file:make_dir(filename:join([".", "releases", Ver])),
+    ok = file:make_symlink(filename:join(["start.boot"]), filename:join([".", "releases", Ver, Name ++ ".boot"])),
+    {ok, _} = file:copy(filename:join([".", Name, "releases", Ver, "start_clean.boot"]), filename:join([".", "releases", Ver, "start_clean.boot"])).
+
+make_tar(NameVer) ->
+    Filename = NameVer ++ ".tar.gz",
+    ok = erl_tar:extract(Filename, [compressed]),
+    ok = file:delete(Filename),
+    {ok, Tar} = erl_tar:open(Filename, [write, compressed]),
+    ok = erl_tar:add(Tar, "lib", []),
+    ok = erl_tar:add(Tar, "releases", []),
+    ok = erl_tar:close(Tar),
+    ?CONSOLE("~s upgrade package created~n", [NameVer]).
+
+cleanup(NameVer, Name, Ver) ->
     ?DEBUG("Removing files needed for building the upgrade~n", []),
+    ok = file:delete(filename:join([".", "releases", Ver, Name ++ ".boot"])),
+    ok = remove_dir_tree("releases"),
+    ok = remove_dir_tree("lib"),
     ok = file:delete(filename:join([".", NameVer ++ ".rel"])),
     ok = file:delete(filename:join([".", NameVer ++ ".boot"])),
     ok = file:delete(filename:join([".", NameVer ++ ".script"])),
     ok = file:delete(filename:join([".", "relup"])).
+
+%% taken from http://www.erlang.org/doc/system_principles/create_target.html
+remove_dir_tree(Dir) ->
+    remove_all_files(".", [Dir]).
+remove_all_files(Dir, Files) ->
+    lists:foreach(fun(File) ->
+                          FilePath = filename:join([Dir, File]),
+                          {ok, FileInfo} = file:read_file_info(FilePath),
+                          case FileInfo#file_info.type of
+                              directory ->
+                                  {ok, DirFiles} = file:list_dir(FilePath), 
+                                  remove_all_files(FilePath, DirFiles),
+                                  file:del_dir(FilePath);
+                              _ ->
+                                  file:delete(FilePath)
+                          end
+                  end, Files).
