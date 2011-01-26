@@ -71,42 +71,26 @@
 %% internal api
 
 run_checks(OldVerPath, ReltoolFile) ->
-    true = release_path_check(OldVerPath),
+    true = prop_check(true, filelib:is_dir(OldVerPath),
+                      "Release directory doesn't exist (~p)~n", [OldVerPath]),
 
     {Name, Ver} = get_release_name(ReltoolFile),
+
     NamePath = filename:join([".", Name]),
-    true = release_path_check(NamePath),
+    true = prop_check(true, filelib:is_dir(NamePath),
+                      "Release directory doesn't exist (~p)~n", [NamePath]),
 
     {NewName, NewVer} = get_release_version(Name, NamePath),
     {OldName, OldVer} = get_release_version(Name, OldVerPath),
 
-    case release_name_check(NewName, OldName) of
-        true ->
-            ok;
-        false ->
-            ?ABORT("New and old .rel release names do not match~n", [])
-    end,
-
-    case release_name_check(Name, NewName) of
-        true ->
-            ok;
-        false ->
-            ?ABORT("Reltool and .rel release names do not match~n", [])
-    end,
-
-    case release_version_check(NewVer, OldVer) of
-        true ->
-            ?ABORT("New and old .rel contain the same version~n", []);
-        false ->
-            ok
-    end,
-
-    case release_version_check(Ver, NewVer) of
-        true ->
-            true;
-        false ->
-            ?ABORT("Reltool and .rel versions do not match~n", [])
-    end,
+    true = prop_check(true, NewName == OldName, 
+                      "New and old .rel release names do not match~n", []),
+    true = prop_check(true, Name == NewName, 
+                      "Reltool and .rel release names do not match~n", []),
+    true = prop_check(false, NewVer == OldVer, 
+                      "New and old .rel contain the same version~n", []),
+    true = prop_check(true, Ver == NewVer, 
+                      "Reltool and .rel versions do not match~n", []),
 
     {NewName, NewVer}.
 
@@ -130,23 +114,8 @@ get_release_version(Name, Path) ->
                                     Name ++ ".rel"])),
     {Name1, Ver}.
 
-release_path_check(Path) ->
-    case filelib:is_dir(Path) of
-        true ->
-            true;
-        false ->
-            ?ABORT("Release directory doesn't exist (~p)~n", [Path])
-    end.
-
-release_version_check(Ver1, Ver2) when Ver1 == Ver2 ->
-    true;
-release_version_check(_, _) ->
-    false.
-
-release_name_check(Name1, Name2) when Name1 == Name2 ->
-    true;
-release_name_check(_, _) ->
-    false.
+prop_check(Expect, Result, _, _) when Expect == Result -> true;
+prop_check(_, _, Msg, Args) -> ?ABORT(Msg, Args).
 
 setup(OldVerPath, NewName, NewVer, NameVer) ->
     NewRelPath = filename:join([".", NewName]),
