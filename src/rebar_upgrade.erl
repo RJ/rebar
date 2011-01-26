@@ -176,13 +176,17 @@ make_tar(NameVer) ->
 
 cleanup(NameVer, Name, Ver) ->
     ?DEBUG("Removing files needed for building the upgrade~n", []),
-    ok = file:delete(filename:join([".", "releases", Ver, Name ++ ".boot"])),
+    Files = [
+             filename:join([".", "releases", Ver, Name ++ ".boot"]),
+             filename:join([".", NameVer ++ ".rel"]),
+             filename:join([".", NameVer ++ ".boot"]),
+             filename:join([".", NameVer ++ ".script"]),
+             filename:join([".", "relup"])
+            ],
+    [ok = file:delete(F) || F <- Files],
+
     ok = remove_dir_tree("releases"),
-    ok = remove_dir_tree("lib"),
-    ok = file:delete(filename:join([".", NameVer ++ ".rel"])),
-    ok = file:delete(filename:join([".", NameVer ++ ".boot"])),
-    ok = file:delete(filename:join([".", NameVer ++ ".script"])),
-    ok = file:delete(filename:join([".", "relup"])).
+    ok = remove_dir_tree("lib").
 
 %% taken from http://www.erlang.org/doc/system_principles/create_target.html
 remove_dir_tree(Dir) ->
