@@ -2,10 +2,9 @@
     ./rebar compile
     ./rebar generate
     ./rebar clean
+    # start the release:
     cd rel/dummy_0.1
-    # start the release (typically you would use nodetool / nice scripts)
-    export BINDIR=`pwd`/erts-*/bin
-    erts-*/bin/beam.smp -- -root . -progname dummy -- -boot releases/0.1/dummy
+    bin/dummy console
 
     erl> dummy_server:get_state().
     erl> dummy_server:set_state(123).
@@ -16,8 +15,8 @@
     # Now, in another terminal we prepare an upgrade..
 
     # change release version numbers from 0.1 to 0.2 in
-    # apps/dummy/src/dummy.app.src
-    # rel/reltool.config
+    $EDITOR apps/dummy/src/dummy.app.src
+    $EDITOR rel/reltool.config
 
     ./rebar compile
     ./rebar generate
