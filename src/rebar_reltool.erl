@@ -27,7 +27,8 @@
 -module(rebar_reltool).
 
 -export([generate/2,
-         clean/2]).
+         clean/2,
+         target_dir/1]).
 
 -include("rebar.hrl").
 -include_lib("reltool/src/reltool.hrl").
@@ -115,7 +116,7 @@ sys_tuple(ReltoolConfig) ->
 
 %%
 %% Look for {target_dir, TargetDir} in the reltool config file; if none is
-%% found, use the name of the release as the default target directory.
+%% found, use "releasename_ver" as the default target directory.
 %%
 target_dir(ReltoolConfig) ->
     case rebar_config:get_global(target_dir, undefined) of
@@ -126,8 +127,8 @@ target_dir(ReltoolConfig) ->
                 false ->
                     {sys, SysInfo} = sys_tuple(ReltoolConfig),
                     case lists:keyfind(rel, 1, SysInfo) of
-                        {rel, Name, _Vsn, _Apps} ->
-                            filename:absname(Name);
+                        {rel, Name, Vsn, _Apps} ->
+                            filename:absname(Name) ++ "_" ++ Vsn;
                         false ->
                             filename:absname("target")
                     end

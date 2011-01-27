@@ -41,8 +41,7 @@
                    "create upgrade package~n", []);
         OldVerPath ->
             %% Run checks to make sure that building a package is possible
-            {NewName, NewVer} = run_checks(OldVerPath, ReltoolFile),
-            NameVer = NewName ++ "_" ++ NewVer,
+            {NewName, NewVer, NameVer} = run_checks(OldVerPath, ReltoolFile),
 
             %% Save the code path prior to doing anything
             OrigPath = code:get_path(),
@@ -54,7 +53,7 @@
             run_systools(NameVer, NewName),
 
             %% Boot file changes
-            boot_files(NewVer, NewName),
+            boot_files(NewVer, NewName, NameVer),
 
             %% Extract upgrade and tar it back up with changes
             make_tar(NameVer),
@@ -76,7 +75,7 @@ run_checks(OldVerPath, ReltoolFile) ->
 
     {Name, Ver} = get_release_name(ReltoolFile),
 
-    NamePath = filename:join([".", Name]),
+    NamePath = filename:join([".", get_target_dir(ReltoolFile)]),
     true = prop_check(filelib:is_dir(NamePath),
                       "Release directory doesn't exist (~p)~n", [NamePath]),
 
@@ -92,7 +91,7 @@ run_checks(OldVerPath, ReltoolFile) ->
     true = prop_check(Ver == NewVer,
                       "Reltool and .rel versions do not match~n", []),
 
-    {NewName, NewVer}.
+    {NewName, NewVer, NamePath}.
 
 get_release_name(ReltoolFile) ->
     %% expect sys to be the first proplist in reltool.config
@@ -104,6 +103,16 @@ get_release_name(ReltoolFile) ->
         _ ->
             ?ABORT("Failed to parse ~s~n", [ReltoolFile])
     end.
+
+%% Get dir name of release, typically at "releasename_ver"
+get_target_dir(ReltoolFile) ->
+    case file:consult(ReltoolFile) of
+        {ok, Terms} ->
+            rebar_reltool:target_dir(Terms);
+        _ ->
+            ?ABORT("Failed to parse ~s~n", [ReltoolFile])
+    end.
+
 
 get_release_version(Name, Path) ->
     [RelFile] = filelib:wildcard(filename:join([Path, "releases", "*",
@@ -118,7 +127,7 @@ prop_check(true, _, _) -> true;
 prop_check(false, Msg, Args) -> ?ABORT(Msg, Args).
 
 setup(OldVerPath, NewName, NewVer, NameVer) ->
-    NewRelPath = filename:join([".", NewName]),
+    NewRelPath = filename:join([".", NameVer]),
     Src = filename:join([NewRelPath, "releases",
                          NewVer, NewName ++ ".rel"]),
     Dst = filename:join([".", NameVer ++ ".rel"]),
@@ -156,12 +165,12 @@ run_systools(NewVer, Name) ->
             end
     end.
 
-boot_files(Ver, Name) ->
+boot_files(Ver, Name, NameVer) ->
     ok = file:make_dir(filename:join([".", "releases"])),
     ok = file:make_dir(filename:join([".", "releases", Ver])),
     ok = file:make_symlink(filename:join(["start.boot"]),
                            filename:join([".", "releases", Ver, Name ++ ".boot"])),
-    {ok, _} = file:copy(filename:join([".", Name, "releases", Ver, "start_clean.boot"]),
+    {ok, _} = file:copy(filename:join([".", NameVer, "releases", Ver, "start_clean.boot"]),
                         filename:join([".", "releases", Ver, "start_clean.boot"])).
 
 make_tar(NameVer) ->
