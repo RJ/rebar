@@ -54,7 +54,7 @@
             run_systools(NameVer, NewName),
 
             %% Boot file changes
-            boot_files(NewVer, NewName), 
+            boot_files(NewVer, NewName),
 
             %% Extract upgrade and tar it back up with changes
             make_tar(NameVer),
@@ -83,13 +83,13 @@ run_checks(OldVerPath, ReltoolFile) ->
     {NewName, NewVer} = get_release_version(Name, NamePath),
     {OldName, OldVer} = get_release_version(Name, OldVerPath),
 
-    true = prop_check(NewName == OldName, 
+    true = prop_check(NewName == OldName,
                       "New and old .rel release names do not match~n", []),
-    true = prop_check(Name == NewName, 
+    true = prop_check(Name == NewName,
                       "Reltool and .rel release names do not match~n", []),
-    true = prop_check(NewVer =/= OldVer, 
+    true = prop_check(NewVer =/= OldVer,
                       "New and old .rel contain the same version~n", []),
-    true = prop_check(Ver == NewVer, 
+    true = prop_check(Ver == NewVer,
                       "Reltool and .rel versions do not match~n", []),
 
     {NewName, NewVer}.
@@ -125,9 +125,9 @@ setup(OldVerPath, NewName, NewVer, NameVer) ->
     {ok, _} = file:copy(Src, Dst),
     ok = code:add_pathsa(
            lists:append([
-                         filelib:wildcard(filename:join([OldVerPath, 
+                         filelib:wildcard(filename:join([OldVerPath,
                                                          "releases", "*"])),
-                         filelib:wildcard(filename:join([OldVerPath, 
+                         filelib:wildcard(filename:join([OldVerPath,
                                                          "lib", "*", "ebin"])),
                          filelib:wildcard(filename:join([NewRelPath,
                                                          "lib", "*", "ebin"])),
@@ -159,9 +159,9 @@ run_systools(NewVer, Name) ->
 boot_files(Ver, Name) ->
     ok = file:make_dir(filename:join([".", "releases"])),
     ok = file:make_dir(filename:join([".", "releases", Ver])),
-    ok = file:make_symlink(filename:join(["start.boot"]), 
+    ok = file:make_symlink(filename:join(["start.boot"]),
                            filename:join([".", "releases", Ver, Name ++ ".boot"])),
-    {ok, _} = file:copy(filename:join([".", Name, "releases", Ver, "start_clean.boot"]), 
+    {ok, _} = file:copy(filename:join([".", Name, "releases", Ver, "start_clean.boot"]),
                         filename:join([".", "releases", Ver, "start_clean.boot"])).
 
 make_tar(NameVer) ->
@@ -197,7 +197,7 @@ remove_all_files(Dir, Files) ->
                           {ok, FileInfo} = file:read_file_info(FilePath),
                           case FileInfo#file_info.type of
                               directory ->
-                                  {ok, DirFiles} = file:list_dir(FilePath), 
+                                  {ok, DirFiles} = file:list_dir(FilePath),
                                   remove_all_files(FilePath, DirFiles),
                                   file:del_dir(FilePath);
                               _ ->
