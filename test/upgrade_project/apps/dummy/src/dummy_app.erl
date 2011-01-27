@@ -1,6 +1,10 @@
 -module(dummy_app).
+-behaviour(application).
 
--export([run/0]).
+-export([start/2, stop/1]).
 
-run() ->
-    ok.
+start(_,_) -> 
+    dummy_sup:start_link().
+
+stop(_) -> ok.
+

@@ -1,3 +1,8 @@
-{"0.2",[{"0.1",[
-    {load_module, dummy_app}
-]}],[{"0.1",[]}]}.
+{"0.2",
+    [{"0.1",[
+                {update, dummy_server, {advanced, [foo]}}
+            ]}],
+    [{"0.1",[
+                {update, dummy_server, {advanced, [foo]}}
+            ]}]
+}.
