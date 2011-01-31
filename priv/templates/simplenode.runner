@@ -103,6 +103,7 @@ case "$1" in
     ping)
         ## See if the VM is alive
         $NODETOOL ping
+        exit $?
         ;;
 
     attach)
